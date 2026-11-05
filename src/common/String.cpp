@@ -655,18 +655,52 @@ StringBuilder &operator<<(StringBuilder &b, String const &data)
 StringBuilder &operator<<(StringBuilder &b, float data)
 {
 	LocaleImpl *impl = getLocaleImpl();
+#ifdef __amigaos__
+	// the m68k libstdc++'s wide streams print floats' decimals wrongly: use
+	// the narrow stream and widen what it prints
+	impl->stream.flags(b.flags);
+	impl->stream.width(b.width);
+	impl->stream.precision(b.precision);
+	impl->stream.fill(char(b.fill));
+	impl->stream.clear();
+	impl->stream << data;
+	for (char ch : impl->stream.str())
+	{
+		String::value_type wch = (unsigned char)ch;
+		b.AddChars(&wch, 1);
+	}
+	impl->stream.str(std::string());
+#else
 	impl->PrepareWStream(b);
 	impl->wstream << data;
 	impl->FlushWStream(b);
+#endif
 	return b;
 }
 
 StringBuilder &operator<<(StringBuilder &b, double data)
 {
 	LocaleImpl *impl = getLocaleImpl();
+#ifdef __amigaos__
+	// the m68k libstdc++'s wide streams print floats' decimals wrongly: use
+	// the narrow stream and widen what it prints
+	impl->stream.flags(b.flags);
+	impl->stream.width(b.width);
+	impl->stream.precision(b.precision);
+	impl->stream.fill(char(b.fill));
+	impl->stream.clear();
+	impl->stream << data;
+	for (char ch : impl->stream.str())
+	{
+		String::value_type wch = (unsigned char)ch;
+		b.AddChars(&wch, 1);
+	}
+	impl->stream.str(std::string());
+#else
 	impl->PrepareWStream(b);
 	impl->wstream << data;
 	impl->FlushWStream(b);
+#endif
 	return b;
 }
 

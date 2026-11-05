@@ -9,7 +9,12 @@ pressure, electricity and nearly two hundred elements to mix. For AmigaOS
 Base: tag v100.1.400 (commit d768aeb89acad986bd252d7e904bf44bb374545f).
 Branch team2/powdertoy-amiga.
 
-Status: built, not yet run in the lab.
+Status: lab-tested (Instance-45, an emulated 68040 with an FPU, RTG,
+5 November 2026): its window opens on the Workbench with the element
+bar and menus, dust drawn with the mouse falls and is blown about by
+the air at about 35 to 60 frames a second (the field mostly empty), Space
+pauses, and closing the window quits back to the Shell, with
+powder.pref written in the drawer. Pictures: docs/screenshots/.
 
 
 What you need
@@ -57,6 +62,8 @@ What was cut or changed
 - No Newtonian gravity: simulation/gravity/Null.cpp, upstream's own
   no-FFT gravity (its render tool uses it), so fftw3f is not needed. The
   gravity tools draw but do nothing.
+- Saves that carry Newtonian gravity data read it as raw little-endian
+  floats (GameSave.cpp); with no gravity here it is not used.
 - No platform clipboard (clipboard/Local.cpp: copy and paste work within
   the game).
 - src/common/platform/Amiga.cpp in place of Null.cpp: the time from
@@ -72,6 +79,12 @@ What was cut or changed
 - src/PowderToy.cpp: main() first moves into the drawer and sets up the
   closing of the screens SDL2.module 0.6 can leave (amiga/amiga_start.c,
   amiga/amiga_screens.c). amiga/stack.c: 512 KB of stack.
+- src/graphics/FontReader.cpp: the built-in font's code points are read
+  as the little-endian bytes they are (std::bit_cast read them in the
+  machine's order: "font data corrupt" at start-up).
+- src/common/String.cpp: numbers with decimals in the interface (FPS,
+  pressure, temperature) go through the narrow stream: the m68k
+  libstdc++'s wide stream printed their decimals as wrong characters.
 - Threads (the game renders thumbnails and runs tasks on threads): the
   toolchain's libpthread; libatomic for 64-bit atomics.
 
