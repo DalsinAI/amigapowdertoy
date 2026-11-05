@@ -1,7 +1,12 @@
 #pragma once
 
 constexpr auto MAX_FIGHTERS = 100;
+#ifdef __amigaos__
+// m68k aligns int to 2 bytes; SnapshotDelta.cpp needs a size in 32-bit words
+struct alignas(4) playerst
+#else
 struct playerst
+#endif
 {
 	char comm;           //command cell
 	char pcomm;          //previous command

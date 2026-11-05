@@ -38,11 +38,17 @@ static bool InitFontData()
 			return false;
 		}
 		uint32_t codePoint;
+#ifdef __amigaos__
+		// the code point is stored little-endian in three bytes; bit_cast
+		// reads it in the machine's order, which is big-endian here
+		codePoint = uint32_t(uint8_t(ptr[0])) | (uint32_t(uint8_t(ptr[1])) << 8) | (uint32_t(uint8_t(ptr[2])) << 16);
+#else
 		{
 			std::array<char, sizeof(uint32_t)> data;
 			std::copy(ptr, ptr + 4, data.data());
 			codePoint = std::bit_cast<uint32_t>(data) & 0xFFFFFFU;
 		}
+#endif
 		if (codePoint >= 0x110000U)
 		{
 			return false;

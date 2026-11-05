@@ -21,12 +21,21 @@ ByteString GetCwd()
 	return cwd;
 }
 
+#ifdef __amigaos__
+// libnix has usleep() and nanosleep(), but declares them for POSIX builds only
+extern "C" int usleep(unsigned long);
+#endif
+
 void Millisleep(long int t)
 {
+#ifdef __amigaos__
+	usleep(t * 1000);
+#else
 	struct timespec s;
 	s.tv_sec = t / 1000;
 	s.tv_nsec = (t % 1000) * 10000000;
 	nanosleep(&s, nullptr);
+#endif
 }
 
 bool Stat(ByteString filename)
