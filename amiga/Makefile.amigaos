@@ -1,0 +1,131 @@
+# The Powder Toy 100.1.400 for AmigaOS 3.x, 68040/68060 + FPU, on OpenGPU's
+# SDL 2.
+#
+#   make -f amiga/Makefile.amigaos -j2 \
+#        STOVE=/path/to/openamigagcc-16.2.0-open4 \
+#        NDK=/path/to/OpenNDK/Include_H SDL2KIT=/path/to/opengpu-sdk \
+#        DEPS=/path/to/m68k-amigaos
+#
+# Meson is not run: amiga/gen.py makes the files it would generate
+# (Config.h and the rest) and this Makefile has its source lists, for a
+# build with no HTTP (requestmanager/Null.cpp), no Lua
+# (lua/PlainCommandInterface.cpp), no platform clipboard
+# (clipboard/Local.cpp), the generic platform files with
+# common/platform/Amiga.cpp in place of Null.cpp and no FFT
+# gravity (simulation/gravity/Null.cpp, as upstream's render tool has it:
+# no fftw3f). DEPS has the Team's static zlib, libpng and bzip2
+# (/mnt/amigachrome/team2/deps/m68k-amigaos); jsoncpp 1.9.6's sources
+# (amiga/deps, from github.com/open-source-parsers/jsoncpp, MIT) are
+# compiled in. Threads: the toolchain's libpthread; 64-bit atomics:
+# libatomic.
+
+STOVE   ?= $(HOME)/CradleLab/toolchain/openamigagcc-16.2.0-open4-x86_64-linux
+NDK     ?= $(HOME)/CradleLab/gfopensdk/OpenNDK/Include_H
+SDL2KIT ?= /mnt/amigachrome/team2/deps/opengpu-sdk
+DEPS    ?= /mnt/amigachrome/team2/deps/m68k-amigaos
+JSONCPP ?= amiga/deps/jsoncpp-1.9.6
+CC      = $(STOVE)/bin/m68k-amigaos-gcc
+CXX     = $(STOVE)/bin/m68k-amigaos-g++
+STRIP   = $(STOVE)/bin/m68k-amigaos-strip
+CPU     ?= -m68040 -m68881
+# -fno-tree-loop-distribute-patterns: GCC 16's loop miscompile (the kit's
+# sdl2-config gives it for GCC 16 too).
+OPT     ?= -O2 -fomit-frame-pointer -fno-tree-loop-distribute-patterns
+
+BUILD   = build/amigaos
+GEN     = $(BUILD)/gen
+OBJDIR  = $(BUILD)/obj
+PROG    = ThePowderToy
+
+DEFS    = -D__amigaos__ -DNDEBUG
+INC     = -Isrc -Iresources -I$(GEN) -I$(SDL2KIT)/include/SDL2 -I$(DEPS)/include \
+          -I$(JSONCPP)/include
+CFLAGS  = -noixemul $(OPT) $(CPU) -fno-common $(DEFS)
+CXXFLAGS = $(CFLAGS) $(INC) -std=c++20 -Wno-psabi
+LDFLAGS = -noixemul $(CPU)
+LIBS    = -L$(SDL2KIT)/lib -L$(DEPS)/lib -lSDL2 -lpng -lz -lbz2 -lpthread -latomic -lm
+
+-include $(GEN)/elements.mk
+
+SRC     = src/SDLCompat.cpp src/PowderToySDL.cpp src/PowderToy.cpp \
+          src/PowderToySDLCommon.cpp src/Format.cpp src/Misc.cpp \
+          src/Probability.cpp \
+          src/lua/CommandInterface.cpp src/lua/TPTSTypes.cpp \
+          src/lua/PlainCommandInterface.cpp \
+          src/bzip2/bz2wrap.cpp \
+          $(filter-out src/client/AuthUserEmscripten.cpp,$(wildcard src/client/*.cpp)) \
+          $(wildcard src/client/http/*.cpp) \
+          src/client/http/requestmanager/Common.cpp \
+          src/client/http/requestmanager/Null.cpp \
+          src/common/Bson.cpp src/common/String.cpp src/common/tpt-rand.cpp \
+          src/common/platform/Common.cpp src/common/platform/Amiga.cpp \
+          src/common/platform/Posix.cpp src/common/platform/PosixProc.cpp \
+          src/common/platform/ExitCommon.cpp \
+          src/common/platform/MainCommon.cpp \
+          src/common/platform/DdirCommon.cpp \
+          src/common/platform/stacktrace/Null.cpp \
+          src/common/clipboard/Local.cpp \
+          $(wildcard src/debug/*.cpp) \
+          $(wildcard src/graphics/*.cpp) \
+          $(wildcard src/gui/*.cpp src/gui/*/*.cpp src/gui/*/*/*.cpp) \
+          src/prefs/Prefs.cpp src/resampler/resampler.cpp \
+          $(wildcard src/simulation/*.cpp) \
+          src/simulation/gravity/Null.cpp \
+          $(ELEMENT_SRC) $(TOOL_SRC) \
+          $(wildcard src/tasks/*.cpp)
+GENSRC  = $(GEN)/save_local_png.cpp $(GEN)/save_online_png.cpp \
+          $(GEN)/font_bz2.cpp $(GEN)/credits_json.cpp
+JSONSRC = $(JSONCPP)/src/lib_json/json_reader.cpp \
+          $(JSONCPP)/src/lib_json/json_value.cpp \
+          $(JSONCPP)/src/lib_json/json_writer.cpp
+CSRC    = amiga/amiga_start.c amiga/amiga_screens.c amiga/stack.c \
+          amiga/posix_extra.c
+
+OBJS    = $(SRC:%.cpp=$(OBJDIR)/%.o) $(GENSRC:$(GEN)/%.cpp=$(OBJDIR)/gen/%.o) \
+          $(JSONSRC:$(JSONCPP)/src/lib_json/%.cpp=$(OBJDIR)/jsoncpp/%.o) \
+          $(CSRC:%.c=$(OBJDIR)/%.o)
+
+all: $(GEN)/Config.h
+	$(MAKE) -f amiga/Makefile.amigaos $(BUILD)/$(PROG)
+
+$(GEN)/Config.h $(GENSRC) $(GEN)/elements.mk: amiga/gen.py src/Config.template.h \
+          src/simulation/elements/meson.build src/simulation/simtools/meson.build
+	python3 amiga/gen.py $(GEN)
+
+$(BUILD)/$(PROG): $(OBJS)
+	$(CXX) $(LDFLAGS) -o $@.debug $(OBJS) $(LIBS)
+	$(STRIP) -o $@ $@.debug
+
+$(OBJDIR)/%.o: %.cpp $(GEN)/Config.h
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJDIR)/gen/%.o: $(GEN)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJDIR)/jsoncpp/%.o: $(JSONCPP)/src/lib_json/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -I$(JSONCPP)/src/lib_json -c -o $@ $<
+
+$(OBJDIR)/amiga/%.o: amiga/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -I$(NDK) -Wall -Wextra -c -o $@ $<
+
+# The drawer: the program (its data is built in), ReadMe, the licence.
+OUT     = dist/ThePowderToy
+ICONS   = $(wildcard amiga/icons/*.info)
+
+dist: $(BUILD)/$(PROG) $(ICONS) AMIGA_PORT.md
+	rm -rf $(OUT) && mkdir -p $(OUT)
+	cp $(BUILD)/$(PROG) $(OUT)/
+	cp AMIGA_PORT.md $(OUT)/ReadMe
+	cp LICENSE $(OUT)/LICENSE.txt
+	cp amiga/icons/ThePowderToy.info amiga/icons/ReadMe.info $(OUT)/
+	cp amiga/icons/ReadMe.info $(OUT)/LICENSE.txt.info
+	cp amiga/icons/ThePowderToy-drawer.info dist/ThePowderToy.info
+
+clean:
+	rm -rf $(BUILD)
+
+.PHONY: all clean dist

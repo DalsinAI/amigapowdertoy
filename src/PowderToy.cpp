@@ -243,8 +243,15 @@ struct ExplicitSingletons
 };
 static std::unique_ptr<ExplicitSingletons> explicitSingletons;
 
+#ifdef __amigaos__
+extern "C" void amiga_start(void); // amiga/amiga_start.c
+#endif
+
 int main(int argc, char *argv[])
 {
+#ifdef __amigaos__
+	amiga_start();
+#endif
 	Platform::SetupCrt();
 	return Platform::InvokeMain(argc, argv);
 }

@@ -157,6 +157,7 @@ void SDLOpen()
 
 void SDLClose()
 {
+#ifndef __amigaos__ // no OpenGL window here, and no GL linked in
 	if (SDL_GetWindowFlags(sdl_window) & SDL_WINDOW_OPENGL)
 	{
 		// * nvidia-460 egl registers callbacks with x11 that end up being called
@@ -168,6 +169,7 @@ void SDLClose()
 		SDL_QuitSubSystem(SDL_INIT_VIDEO);
 		SDL_GL_UnloadLibrary();
 	}
+#endif
 	SDL_Quit();
 }
 

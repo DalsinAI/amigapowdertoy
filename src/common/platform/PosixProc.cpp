@@ -28,6 +28,10 @@ void DoRestart()
 ByteString ExecutableName()
 {
 	auto firstApproximation = ExecutableNameFirstApprox();
+#ifdef __amigaos__
+	// no realpath() in libnix: the name the program was started by
+	return firstApproximation;
+#else
 	auto rp = std::unique_ptr<char, decltype(std::free) *>(realpath(firstApproximation.data(), nullptr), std::free);
 	if (!rp)
 	{
@@ -35,6 +39,7 @@ ByteString ExecutableName()
 		return "";
 	}
 	return rp.get();
+#endif
 }
 
 bool UpdateStart(std::span<const char> data)
