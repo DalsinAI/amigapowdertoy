@@ -1,0 +1,15 @@
+The Powder Toy
+
+Mouse  draw with the element (left button), erase (right button)
+Mouse wheel  brush size
+Tab  circle, square or triangle brush
+Space  pause, F  one frame on
+Z  zoom
+S  save a stamp, L  load the last, K  stamp library
+0 to 9  view mode
+E  find an element
+G, Shift + G  grid size
+H  hide the HUD
+W  gravity mode, Y  air mode
+P  screenshot
+Q or Esc  quit
