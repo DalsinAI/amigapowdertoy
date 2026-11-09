@@ -120,6 +120,7 @@ dist: $(BUILD)/$(PROG) $(ICONS) AMIGA_PORT.md
 	rm -rf $(OUT) && mkdir -p $(OUT)
 	cp $(BUILD)/$(PROG) $(OUT)/
 	cp AMIGA_PORT.md $(OUT)/ReadMe
+	cp amiga/Controls $(OUT)/Controls
 	cp LICENSE $(OUT)/LICENSE.txt
 	cp amiga/icons/ThePowderToy.info amiga/icons/ReadMe.info $(OUT)/
 	cp amiga/icons/ReadMe.info $(OUT)/LICENSE.txt.info
