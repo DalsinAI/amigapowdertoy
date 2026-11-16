@@ -125,6 +125,7 @@ dist: $(BUILD)/$(PROG) $(ICONS) AMIGA_PORT.md
 	cp amiga/icons/ThePowderToy.info amiga/icons/ReadMe.info $(OUT)/
 	cp amiga/icons/ReadMe.info $(OUT)/LICENSE.txt.info
 	cp amiga/icons/ThePowderToy-drawer.info dist/ThePowderToy.info
+	cp package/Install-ThePowderToy package/Install-ThePowderToy.info dist/
 
 clean:
 	rm -rf $(BUILD)

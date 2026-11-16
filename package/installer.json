@@ -1,0 +1,21 @@
+{
+  "name": "The Powder Toy",
+  "version": "100.1.400-amigaos3",
+  "drawer": "ThePowderToy",
+  "program": "ThePowderToy",
+  "cpu": "68040",
+  "fpu": true,
+  "space": 10000000,
+  "modules": [
+    "SDL2.module"
+  ],
+  "keep": [
+    "powder.pref",
+    "Saves",
+    "stamps",
+    "Screenshots"
+  ],
+  "parent": "Work:Games",
+  "badge": "../amiga/icons/art/powdertoy.png",
+  "script": "Install-ThePowderToy"
+}
