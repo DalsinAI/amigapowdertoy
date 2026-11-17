@@ -62,6 +62,16 @@
         (source "LIBS:OpenGPU")
         (dest "LIBS:GFOpenGPU")
         (choices "SDL2.module")))
+
+; bzip2.library (GFOpenBZip2), from the drawer's Libs/ to LIBS:; a newer one
+; there is kept. Added to port_installer.py's script by hand: it has no
+; shared-library step yet.
+(copylib
+    (prompt "Copying bzip2.library to LIBS:")
+    (help @copylib-help)
+    (source (tackon #from "Libs/bzip2.library"))
+    (dest "LIBS:")
+    (confirm "expert"))
 (complete 20)
 
 ; the drawer: everything in it, but what the player has made

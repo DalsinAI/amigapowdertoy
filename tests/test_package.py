@@ -2,7 +2,8 @@
 
   * the Installer script (made by amicradle's scripts/ports/port_installer.py)
     agrees with package/installer.json: version, drawer, program, CPU, FPU,
-    space, the GFOpenGPU modules and the settings it keeps;
+    space, the GFOpenGPU modules and the settings it keeps, and it copies
+    GFOpenBZip2's bzip2.library from the drawer's Libs/ to LIBS:;
   * tools/pack_dist.py packs the drawer, its icon and the Installer with its
     icon at the archive's root, names the archive after the Installer's $VER
     and writes a matching .sha256; a drawer without its icon or without an
@@ -63,6 +64,14 @@ class InstallerSpecTests(unittest.TestCase):
             self.assertIn(f'"LIBS:GFOpenGPU/{module}"', SCRIPT)
         for keep in SPEC.get("keep", []):
             self.assertIn(f'(tackon #dest "{keep}")', SCRIPT)
+
+    def test_bzip2_library_goes_to_libs(self):
+        self.assertIn('(source (tackon #from "Libs/bzip2.library"))', SCRIPT)
+        self.assertRegex(SCRIPT, r'\(copylib\s+\(prompt "Copying bzip2.library to LIBS:"\)')
+        env = dict(re.findall(r"^(\w+)=(\S+)$", (PKG / "bzip2.env").read_text(), re.M))
+        self.assertRegex(env["GFOPENBZIP2_SHA256"], r"^[0-9a-f]{64}$")
+        self.assertTrue(env["GFOPENBZIP2_ARCHIVE"].endswith(".lha"))
+        self.assertIn('BZIP2_LIBRARY="$BZ/Libs/bzip2.library"', (PKG / "build-amiga.sh").read_text())
 
     def test_installer_icon_is_a_disk_object(self):
         self.assertEqual((PKG / f"{SPEC['script']}.info").read_bytes()[:2], b"\xe3\x10")
