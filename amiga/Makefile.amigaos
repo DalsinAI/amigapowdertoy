@@ -13,8 +13,12 @@
 # (clipboard/Local.cpp), the generic platform files with
 # common/platform/Amiga.cpp in place of Null.cpp and no FFT
 # gravity (simulation/gravity/Null.cpp, as upstream's render tool has it:
-# no fftw3f). DEPS has the Team's static zlib, libpng and bzip2
-# (/mnt/amigachrome/team2/deps/m68k-amigaos); jsoncpp 1.9.6's sources
+# no fftw3f). DEPS has the Team's static zlib and libpng
+# (/mnt/amigachrome/team2/deps/m68k-amigaos). bzip2 is GFOpenBZip2's
+# bzip2.library: BZIP2_INC and BZIP2_LIB name its SDK's Include and Lib
+# (<bzlib.h> and the libbz2.a stub), and dist copies BZIP2_LIBRARY, when
+# set, into the drawer's Libs/ for the Installer (package/bzip2.sh fetches
+# the release in package/bzip2.env). jsoncpp 1.9.6's sources
 # (amiga/deps, from github.com/open-source-parsers/jsoncpp, MIT) are
 # compiled in. Threads: the toolchain's libpthread; 64-bit atomics:
 # libatomic.
@@ -24,6 +28,9 @@ NDK     ?= $(HOME)/CradleLab/gfopensdk/OpenNDK/Include_H
 SDL2KIT ?= /mnt/amigachrome/team2/deps/opengpu-sdk
 DEPS    ?= /mnt/amigachrome/team2/deps/m68k-amigaos
 JSONCPP ?= amiga/deps/jsoncpp-1.9.6
+BZIP2_INC ?= $(DEPS)/include
+BZIP2_LIB ?= $(DEPS)/lib
+BZIP2_LIBRARY ?=
 CC      = $(STOVE)/bin/m68k-amigaos-gcc
 CXX     = $(STOVE)/bin/m68k-amigaos-g++
 STRIP   = $(STOVE)/bin/m68k-amigaos-strip
@@ -38,12 +45,12 @@ OBJDIR  = $(BUILD)/obj
 PROG    = ThePowderToy
 
 DEFS    = -D__amigaos__ -DNDEBUG
-INC     = -Isrc -Iresources -I$(GEN) -I$(SDL2KIT)/include/SDL2 -I$(DEPS)/include \
+INC     = -Isrc -Iresources -I$(GEN) -I$(SDL2KIT)/include/SDL2 -I$(BZIP2_INC) -I$(DEPS)/include \
           -I$(JSONCPP)/include
 CFLAGS  = -noixemul $(OPT) $(CPU) -fno-common $(DEFS)
 CXXFLAGS = $(CFLAGS) $(INC) -std=c++20 -Wno-psabi
 LDFLAGS = -noixemul $(CPU)
-LIBS    = -L$(SDL2KIT)/lib -L$(DEPS)/lib -lSDL2 -lpng -lz -lbz2 -lpthread -latomic -lm
+LIBS    = -L$(SDL2KIT)/lib -L$(BZIP2_LIB) -L$(DEPS)/lib -lSDL2 -lpng -lz -lbz2 -lpthread -latomic -lm
 
 -include $(GEN)/elements.mk
 
@@ -125,6 +132,8 @@ dist: $(BUILD)/$(PROG) $(ICONS) AMIGA_PORT.md
 	cp amiga/icons/ThePowderToy.info amiga/icons/ReadMe.info $(OUT)/
 	cp amiga/icons/ReadMe.info $(OUT)/LICENSE.txt.info
 	cp amiga/icons/ThePowderToy-drawer.info dist/ThePowderToy.info
+	cp package/Install-ThePowderToy package/Install-ThePowderToy.info dist/
+	if [ -n "$(BZIP2_LIBRARY)" ]; then mkdir -p $(OUT)/Libs && cp $(BZIP2_LIBRARY) $(OUT)/Libs/bzip2.library; fi
 
 clean:
 	rm -rf $(BUILD)

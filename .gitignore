@@ -93,3 +93,5 @@ screenshot_*
 /font/
 compile_commands.json
 ignore/
+/build-amiga-package/
+__pycache__/
