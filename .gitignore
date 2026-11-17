@@ -94,3 +94,4 @@ screenshot_*
 compile_commands.json
 ignore/
 /build-amiga-package/
+__pycache__/
